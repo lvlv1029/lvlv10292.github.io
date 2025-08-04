@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>战争对河南粮食安全的影响</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #8B0000;
+            font-size: 24px;
+            margin: 0;
+        }
+        .header p {
+            color: #555;
+            margin: 10px 0 0 0;
+        }
+        .map-container {
+            width: 100%;
+            height: 700px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+            z-index: 1000;
+            width: 240px;
+        }
+        .legend h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+        .data-overview {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 320px;
+        }
+        .data-overview h3 {
+            margin: 0 0 10px 0;
+            color: #8B0000;
+            font-size: 16px;
+        }
+        .data-overview p {
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .data-overview strong {
+            color: #8B0000;
+        }
+        /* 弹窗样式 */
+        .leaflet-popup-content-wrapper {
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .leaflet-popup-content {
+            width: 280px !important;
+            margin: 12px 15px;
+        }
+        .popup-title {
+            font-weight: bold;
+            color: #8B0000;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 16px;
+        }
+        .popup-data {
+            color: #333;
+            margin: 6px 0;
+            font-size: 14px;
+        }
+        .popup-data strong {
+            color: #5D3A9B;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>战争阴影下的河南粮食危机</h1>
+            <p>花园口决堤、旱灾与大饥荒的空间分布</p>
+        </div>
+        <div id="map" class="map-container"></div>
+        
+        <!-- 图例 -->
+        <div class="legend">
+            <h3>地图图例</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #D2691E, #F4A460); opacity: 0.7;"></div>
+                <span>花园口决堤黄泛区</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FF6347; opacity: 0.6;"></div>
+                <span>豫西水土流失与旱灾频发区</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #8B0000; opacity: 0.8;"></div>
+                <span>1942年大饥荒重灾区</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #5D3A9B; opacity: 0.4;"></div>
+                <span>经济作物种植区</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #000000;"></div>
+                <span>被军阀控制的铁路（粮食运输受阻）</span>
+            </div>
+        </div>
+        
+        <!-- 数据概览 -->
+        <div class="data-overview">
+            <h3>粮食危机核心数据</h3>
+            <p><strong>黄泛区</strong>：1300万亩耕地被黄河泥沙覆盖，亩产从200斤降至不足50斤</p>
+            <p><strong>旱灾频率</strong>：豫西从"10年1遇"变为"3年1遇"</p>
+            <p><strong>结构性短缺</strong>：经济作物区需外调粮食，但运输通道被军阀控制</p>
+            <p><strong>1942大饥荒</strong>：洛阳、许昌等地虽有收成，但粮食被强征导致饿殍遍野</p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化地图（河南中心坐标）
+        const map = L.map('map').setView([33.86, 113.53], 7);
+        
+        // 添加底图（历史风格）
+        const baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© 开放街道图 数据 © 历史文献整理',
+            maxZoom: 12,
+            minZoom: 6
+        }).addTo(map);
+
+        // 1. 花园口决堤黄泛区（1938年）
+        const floodArea = L.polygon([
+            [34.9, 114.5], [34.7, 115.0], [34.5, 115.5], [34.0, 115.8],
+            [33.5, 115.6], [33.0, 115.2], [32.8, 114.8], [33.0, 114.3],
+            [33.5, 114.0], [34.0, 114.2], [34.5, 114.3]
+        ], {
+            color: '#CD853F',
+            weight: 3,
+            fill: true,
+            fillColor: '#D2691E',
+            fillOpacity: 0.5
+        }).bindPopup(`
+            <div class="popup-title">花园口决堤黄泛区</div>
+            <div class="popup-data"><strong>受影响耕地：</strong>1300万亩</div>
+            <div class="popup-data"><strong>产量变化：</strong>亩产从战前200斤骤降至不足50斤</div>
+            <div class="popup-data"><strong>影响：</strong>黄河泥沙覆盖导致土壤严重沙化，商丘、周口等地"昔日良田尽成沼泽，三年无收"</div>
+            <div class="popup-data"><strong>战争因素：</strong>人为决堤以阻挡日军，却导致河南东部农业系统崩溃</div>
+        `).addTo(map);
+
+        // 花园口决堤点标记
+        L.marker([34.82, 114.45], {
+            icon: L.divIcon({
+                html: '<div style="background:#8B0000;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;">决</div>',
+                iconSize: [24, 24]
+            })
+        }).bindPopup(`<strong>花园口决堤点（1938年6月）</strong><br>黄河改道南泛的起点`).addTo(map);
+
+        // 2. 豫西水土流失与旱灾频发区
+        const droughtArea = L.polygon([
+            [34.5, 111.5], [34.8, 112.0], [34.7, 112.5], [34.5, 113.0],
+            [34.0, 113.2], [33.5, 113.0], [33.2, 112.5], [33.5, 112.0],
+            [34.0, 111.8]
+        ], {
+            color: '#CD5C5C',
+            weight: 2,
+            fill: true,
+            fillColor: '#FF6347',
+            fillOpacity: 0.4
+        }).bindPopup(`
+            <div class="popup-title">豫西伏牛山区</div>
+            <div class="popup-data"><strong>问题：</strong>滥垦导致严重水土流失</div>
+            <div class="popup-data"><strong>旱灾频率变化：</strong>1920年前"10年1遇"→1920-1940年"3年1遇"</div>
+            <div class="popup-data"><strong>影响：</strong>粮食连年绝收，土地生产力持续下降</div>
+            <div class="popup-data"><strong>战争因素：</strong>战乱导致水利设施失修，加剧旱灾影响</div>
+        `).addTo(map);
+
+        // 旱灾标记点
+        const droughtPoints = [
+            { coords: [34.4, 112.4], year: "1920年" },
+            { coords: [33.9, 112.8], year: "1929年" },
+            { coords: [34.2, 112.0], year: "1936年" },
+            { coords: [33.7, 112.5], year: "1942年" }
+        ];
+        droughtPoints.forEach(point => {
+            L.circleMarker(point.coords, { 
+                radius: 5, 
+                color: '#8B0000', 
+                fillColor: '#FF6347',
+                fillOpacity: 0.8 
+            }).bindPopup(`<strong>${point.year}严重旱灾</strong><br>粮食绝收区域`).addTo(map);
+        });
+
+        // 3. 1942年大饥荒重灾区
+        const faminePoints = [
+            { coords: [34.6, 112.4], name: "洛阳", desc: "粮食被强征充军粮，饿殍遍野" },
+            { coords: [34.0, 113.9], name: "许昌", desc: "烟草种植区，粮食依赖外调但运输中断" },
+            { coords: [33.6, 114.6], name: "周口", desc: "黄泛区核心，耕地被毁后饥荒加剧" },
+            { coords: [34.7, 114.3], name: "开封", desc: "虽有部分收成，但被日军掠夺" }
+        ];
+        faminePoints.forEach(point => {
+            L.marker(point.coords, {
+                icon: L.divIcon({
+                    html: '<div style="background:#8B0000;color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;">饥</div>',
+                    iconSize: [22, 22]
+                })
+            }).bindPopup(`
+                <div class="popup-title">1942年大饥荒重灾区：${point.name}</div>
+                <div class="popup-data"><strong>灾情：</strong>${point.desc}</div>
+                <div class="popup-data"><strong>矛盾点：</strong>部分地区有粮食收成，但因战争被强征或无法运输</div>
+                <div class="popup-data"><strong>后果：</strong>人口大量减少，农业生产陷入瘫痪</div>
+            `).addTo(map);
+        });
+
+        // 4. 经济作物种植区（需外调粮食）
+        const cashCropArea = L.polygon([
+            [34.2, 113.5], [34.0, 114.0], [33.5, 114.2], [33.7, 113.8], [34.0, 113.2]
+        ], {
+            color: '#5D3A9B',
+            weight: 2,
+            fill: true,
+            fillColor: '#5D3A9B',
+            fillOpacity: 0.3,
+            dashArray: '6, 4'
+        }).bindPopup(`
+            <div class="popup-title">经济作物种植区</div>
+            <div class="popup-data"><strong>主要作物：</strong>烟草（英美烟公司控制）</div>
+            <div class="popup-data"><strong>粮食状况：</strong>本地粮食无法自给，依赖外部调运</div>
+            <div class="popup-data"><strong>战争影响：</strong>铁路被军阀控制运输军火，粮食运输通道中断</div>
+            <div class="popup-data"><strong>后果：</strong>形成"种烟却无粮可食"的荒诞局面</div>
+        `).addTo(map);
+
+        // 5. 被军阀控制的铁路（粮食运输受阻）
+        const controlledRailway = L.polyline([
+            [34.75, 113.65], [34.02, 113.96], [33.56, 114.02]
+        ], {
+            color: '#000000',
+            weight: 4,
+            opacity: 0.8,
+            dashArray: '10, 5'
+        }).bindPopup(`
+            <div class="popup-title">被军阀控制的铁路段</div>
+            <div class="popup-data"><strong>影响：</strong>原用于粮食运输的铁路被挪用运输军火与经济作物</div>
+            <div class="popup-data"><strong>后果：</strong>粮食运输受阻，加剧区域性短缺</div>
+            <div class="popup-data"><strong>关键节点：</strong>郑州-漯河段被重点控制</div>
+        `).addTo(map);
+
+        // 6. 主要河流（黄河）
+        const yellowRiver = L.polyline([
+            [35.0, 112.5], [34.8, 113.0], [34.7, 113.5], [34.8, 114.0], [35.0, 114.5]
+        ], {
+            color: '#8B4513',
+            weight: 5,
+            opacity: 0.7
+        }).bindPopup("黄河（花园口决堤后改道南流，造成大面积黄泛区）").addTo(map);
+    </script>
+</body>
+</html>
